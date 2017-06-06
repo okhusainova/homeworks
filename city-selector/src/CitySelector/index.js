@@ -3,37 +3,38 @@ require('./style.less');
 // Your code...
 class CitySelector {
 	constructor(params) {
-		this._elementId = params.elementId;
+		this.$elementId = $('#' + params.elementId);
 		this._regionsUrl = params.regionsUrl;
 		this._localitiesUrl = params.localitiesUrl;
-		this._saveUrl = params.saveUrl;
+		this.saveUrl = params.saveUrl;
 
-		this._currentCity = '';
-		this._currentRegionId = null;
+		this.currentCity = '';
+		this.currentRegionId = null;
 
 		this._init();
-		this._initInfoBlock();
+		this._initInfoBlock();	
+
 	}
 
 	destroy() {
-		$(`#${this._elementId}`).empty();
+		this.$elementId.empty();
 		this._clearInfoBlock();
 	}
 
 	_init() {
-		$(`#${this._elementId}`).html(`
+		this.$elementId.html(`
 			<button class="selectRegionBtn">Выбрать регион</button>
 			<div class="regionsContainer"></div>
 			<div class="citiesContainer"></div>
 			<button id="saveBtn" style="display:none">Сохранить</div>
 		`);
-		$('.selectRegionBtn').on('click', this._renderRegionsList('regionsContainer'));
-		$('#saveBtn').on('click', this._saveCityData());
-
+		this.$elementId.on('click', '.selectRegionBtn', { className: 'regionsContainer'}, this._renderRegionsList.bind(this));
+		this.$elementId.on('click', '#saveBtn', this._saveCityData());
+		this.$elementId.on('click', '.regions > li', this._handleRegionClick('citiesContainer'));
 	}
 
-	_renderRegionsList(regionsContainerClassName) {
-		return () => {
+	_renderRegionsList(event) {
+		 const className = event.data.className;
 			$.ajax({
 				url: this._regionsUrl,
 				method: 'get',
@@ -47,10 +48,8 @@ class CitySelector {
 					`;
 				});
 				html += '</ul>';
-				$(`.${regionsContainerClassName}`).html(html);
-				$('.regions').on('click', 'li', this._handleRegionClick('citiesContainer'));
+				$(`.${className}`).html(html);
 			})
-		}
 	}
 
 	_handleRegionClick(citiesContainerClassName) {
@@ -58,7 +57,7 @@ class CitySelector {
 		let citySelector = this;
 		return function() {
 			let regionId = $(this).data('id');
-			citySelector._currentRegionId = regionId;
+			citySelector.currentRegionId = regionId;
 			$('#regionText').html(regionId);
 			$('#localityText').empty();
 			$('#saveBtn').prop('disabled', true);
@@ -80,7 +79,7 @@ class CitySelector {
 					let cityName = $(this).find('.city-name').text();
 						$('#saveBtn').show();
 						$('#localityText').html(cityName);
-						citySelector._currentCity = cityName;
+						citySelector.currentCity = cityName;
 						$('#saveBtn').prop('disabled', false);
 				})
 			});
@@ -101,15 +100,15 @@ class CitySelector {
 		let citySelector = this;
 		return function() {
 			$.ajax({
-				url: citySelector._saveUrl,
+				url: citySelector.saveUrl,
 				method: 'post',
 				async: false,
 				data: {
-					region: citySelector._currentRegionId,
-					city: citySelector._currentCity 
+					region: citySelector.currentRegionId,
+					city: citySelector.currentCity 
 				},
 				success: function() {
-					  window.location.href = citySelector._saveUrl;
+					  window.location.href = citySelector.saveUrl;
 				}
 			});
 		}
